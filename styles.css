@@ -171,6 +171,129 @@ button {
   padding: 0 18px;
 }
 
+.flow-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 20px 16px;
+  background: #fff;
+}
+
+.flow-kicker {
+  color: #9297a3;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+}
+
+.flow-header h1 {
+  margin: 7px 0 0;
+  color: #242633;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.header-add {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 7px 15px rgba(102, 126, 234, 0.28);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.today-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 18px 12px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.today-summary-main {
+  display: grid;
+  gap: 5px;
+}
+
+.today-summary-main span,
+.summary-pair span {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  opacity: 0.84;
+}
+
+.today-summary-main strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 29px;
+}
+
+.summary-pair {
+  display: grid;
+  gap: 8px;
+  min-width: 88px;
+  padding-left: 15px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.summary-pair div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.summary-pair b {
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+}
+
+.efficiency-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 0 18px 16px;
+}
+
+.efficiency-card {
+  display: grid;
+  gap: 5px;
+  padding: 15px 14px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.efficiency-card span,
+.efficiency-card small {
+  color: #989ba3;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+}
+
+.efficiency-card strong {
+  color: var(--blue-purple);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+}
+
+.efficiency-card em {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+}
+
 .card {
   margin-bottom: 16px;
   padding: 18px;
@@ -391,6 +514,30 @@ button {
   text-align: center;
   font-size: 19px;
   letter-spacing: 3px;
+}
+
+.compact-flow-list {
+  display: grid;
+  gap: 1px;
+}
+
+.flow-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 4px;
+  border-bottom: 1px solid #f0f1f5;
+  font-size: 16px;
+}
+
+.flow-line:last-child {
+  border-bottom: 0;
+}
+
+.flow-line b {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
 }
 
 .quick-grid {

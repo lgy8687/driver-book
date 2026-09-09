@@ -172,17 +172,41 @@ function flowView() {
     { kind: "income", label: "高德", iconUrl: iconPath("icon-gaode"), amount: 156.4 },
     { kind: "expense", label: "充电", icon: "⚡", amount: 30 }
   ];
+  const todayIncome = state.daily.find(item => item.day === 10)?.income || 0;
+  const todayExpense = state.daily.find(item => item.day === 10)?.expense || 0;
+  const todayNet = todayIncome - todayExpense;
+  const workHours = 10.5;
+  const distance = 286;
+  const hourly = todayIncome / workHours;
+  const perKm = todayIncome / distance;
 
   return `
-    ${wxNav("出车收支日历")}
-    ${hero("流水", "支持多平台收入累加，分类可自定义", ["今日流水", "目标进度"], 0)}
-    ${metrics()}
+    <header class="flow-header">
+      <div>
+        <div class="flow-kicker">今天 · 2026年9月10日</div>
+        <h1>流水</h1>
+      </div>
+      <button class="header-add" type="button" aria-label="添加流水">＋</button>
+    </header>
+    <section class="today-summary">
+      <div class="today-summary-main">
+        <span>今日净收入</span>
+        <strong>¥${money(todayNet)}</strong>
+      </div>
+      <div class="summary-pair">
+        <div><span>收入</span><b>¥${money(todayIncome)}</b></div>
+        <div><span>支出</span><b>¥${money(todayExpense)}</b></div>
+      </div>
+    </section>
+    <section class="efficiency-row">
+      <div class="efficiency-card"><span>平均时薪</span><strong>¥${money(hourly)}<em>/小时</em></strong><small>出车 ${workHours} 小时</small></div>
+      <div class="efficiency-card"><span>每公里收入</span><strong>¥${money(perKm)}<em>/公里</em></strong><small>行驶 ${distance} 公里</small></div>
+    </section>
     <div class="content">
-      ${targetCard("本周流水目标", state.targets.week)}
       <section class="card">
-        ${title("🧾", "今日流水", "+ 添加")}
+        ${title("📱", "平台收入")}
         <div class="flow-list">
-          ${todayItems.map(item => `
+          ${todayItems.filter(item => item.kind === "income").map(item => `
             <div class="flow-item">
               <div class="icon-box">
                 ${item.iconUrl ? `<img src="${item.iconUrl}" alt="">` : `<span class="emoji-icon">${item.icon}</span>`}
@@ -191,17 +215,32 @@ function flowView() {
                 <div class="item-title">${item.label}</div>
                 <div class="item-sub">${item.kind === "income" ? "收入平台" : "支出分类"}</div>
               </div>
-              <div class="amount ${item.kind === "income" ? "green" : "red"}">${item.kind === "income" ? "+" : "-"}¥${money(item.amount)}</div>
+              <div class="amount green">+¥${money(item.amount)}</div>
             </div>
           `).join("")}
         </div>
-        <div class="flow-add">添加流水</div>
       </section>
       <section class="card">
-        ${title("⚡", "快速记账")}
-        <div class="quick-grid">
-          <button class="quick-btn income" type="button">收入</button>
-          <button class="quick-btn expense" type="button">支出</button>
+        ${title("📋", "今日支出")}
+        <div class="flow-list">
+          ${todayItems.filter(item => item.kind === "expense").map(item => `
+            <div class="flow-item">
+              <div class="icon-box"><span class="emoji-icon">${item.icon}</span></div>
+              <div><div class="item-title">${item.label}</div><div class="item-sub">支出分类</div></div>
+              <div class="amount red">-¥${money(item.amount)}</div>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+      <section class="card">
+        ${title("🧾", "今日流水")}
+        <div class="flow-list compact-flow-list">
+          ${todayItems.map(item => `
+            <div class="flow-line">
+              <span>${item.label}</span>
+              <b class="${item.kind === "income" ? "green" : "red"}">${item.kind === "income" ? "+" : "-"}¥${money(item.amount)}</b>
+            </div>
+          `).join("")}
         </div>
       </section>
     </div>
