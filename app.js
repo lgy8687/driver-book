@@ -1,4 +1,7 @@
-const iconPath = name => `../assets/icons/${name}.svg`;
+const iconPath = name => {
+  const assetRoot = window.location.pathname.includes("/web-preview/") ? "../assets" : "assets";
+  return `${assetRoot}/icons/${name}.svg`;
+};
 
 const state = {
   view: "flow",
