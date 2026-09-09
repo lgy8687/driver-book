@@ -5,10 +5,9 @@ const iconPath = name => {
 
 const state = {
   view: "flow",
-  period: "month",
   month: 8,
   year: 2026,
-  today: "2026-09-09",
+  today: "2026-09-10",
   income: [
     { name: "滴滴", icon: "icon-didi", amount: 9396.5, days: 31 },
     { name: "美团", icon: "icon-meituan", amount: 1394.1, days: 16 },
@@ -18,9 +17,9 @@ const state = {
   ],
   expense: [
     { name: "充电", icon: "⚡", amount: 900, percent: 21.3 },
+    { name: "餐饮", icon: "🍜", amount: 302, percent: 7.1 },
     { name: "维修", icon: "🔧", amount: 123, percent: 2.9 },
     { name: "停车", icon: "🅿️", amount: 96, percent: 2.3 },
-    { name: "餐饮", icon: "🍜", amount: 302, percent: 7.1 },
     { name: "其他", icon: "📦", amount: 80, percent: 1.9 }
   ],
   daily: [
@@ -60,10 +59,9 @@ function progress(current, target) {
     };
   }
   const overflow = current - target;
-  const total = current;
   return {
-    done: (target / total) * 100,
-    over: (overflow / total) * 100,
+    done: (target / current) * 100,
+    over: (overflow / current) * 100,
     remain: 0,
     overflow
   };
@@ -77,15 +75,30 @@ function setView(view) {
   render();
 }
 
-function header(title, sub, pill = "Web 预览") {
+function wxNav(title) {
   return `
-    <section class="top-hero">
-      <div class="hero-row">
+    <div class="wx-nav">
+      <button class="back-dot" type="button">‹</button>
+      <div class="wx-title">${title}</div>
+      <div class="wx-menu"><span>•••</span><i></i><span>◎</span></div>
+    </div>
+  `;
+}
+
+function hero(title, sub, segments, activeIndex = 0) {
+  return `
+    <section class="hero">
+      <div class="hero-title-row">
+        <span class="hero-back">←</span>
         <div>
-          <h1 class="hero-title">${title}</h1>
-          <div class="hero-sub">${sub}</div>
+          <div class="hero-title">${title}</div>
+          ${sub ? `<div class="hero-sub">${sub}</div>` : ""}
         </div>
-        <div class="hero-pill">${pill}</div>
+      </div>
+      <div class="hero-segment ${segments.length === 3 ? "three" : ""}">
+        ${segments.map((item, index) => `
+          <div class="segment-item ${index === activeIndex ? "active" : ""}">${item}</div>
+        `).join("")}
       </div>
     </section>
   `;
@@ -96,16 +109,16 @@ function metrics() {
   const expense = totalExpense();
   const net = income - expense;
   return `
-    <section class="metrics">
-      <div class="metric-card">
+    <section class="metrics-grid">
+      <div class="metric">
         <div class="metric-label">总收入</div>
         <div class="metric-value green">¥${money(income)}</div>
       </div>
-      <div class="metric-card">
+      <div class="metric">
         <div class="metric-label">总支出</div>
         <div class="metric-value red">¥${money(expense)}</div>
       </div>
-      <div class="metric-card">
+      <div class="metric">
         <div class="metric-label">净收入</div>
         <div class="metric-value blue">¥${money(net)}</div>
       </div>
@@ -113,24 +126,43 @@ function metrics() {
   `;
 }
 
-function targetCard(label, data) {
+function title(icon, text, action = "") {
+  return `
+    <div class="section-title">
+      <div class="section-title-main"><span class="title-icon">${icon}</span><span>${text}</span></div>
+      ${action ? `<button class="small-action" type="button">${action}</button>` : ""}
+    </div>
+  `;
+}
+
+function targetCard(label, data, monthly = false) {
   const p = progress(data.current, data.target);
   const status = p.overflow > 0 ? `超出 ¥${money(p.overflow)}` : `还差 ¥${money(p.remain)}`;
   return `
-    <div class="card">
-      <div class="section-title">
-        <span>${label}</span>
-        <button class="section-action" type="button">${status}</button>
-      </div>
+    <section class="card">
+      ${title("🎯", label)}
       <div class="target-track">
-        <div class="target-fill" style="width:${p.done}%"></div>
-        ${p.over > 0 ? `<div class="target-over" style="width:${p.over}%"></div>` : ""}
+        <div class="target-fill ${monthly ? "month" : ""}" style="width:${p.done}%">¥${money(data.target)}</div>
+        ${p.over > 0 ? `<div class="target-over" style="width:${p.over}%">+¥${money(p.overflow)}</div>` : ""}
       </div>
-      <div class="target-labels">
-        <span class="small-muted">目标 ¥${money(data.target)}</span>
-        <strong>当前 ¥${money(data.current)}</strong>
+      <div class="target-meta">
+        <span>${monthly ? "本月" : "本周"}目标 ¥${money(data.target)}</span>
+        <span class="target-status">${status}</span>
       </div>
-    </div>
+    </section>
+  `;
+}
+
+function dayStrip() {
+  return `
+    <section class="card">
+      <div class="day-strip">
+        ${Array.from({ length: 31 }, (_, index) => `
+          <div class="day-bar ${index < 28 ? "worked" : ""}"></div>
+        `).join("")}
+      </div>
+      <span class="day-text">已出车 28 天</span>
+    </section>
   `;
 }
 
@@ -142,38 +174,37 @@ function flowView() {
   ];
 
   return `
-    ${header("流水", "今天收车后 30 秒记一笔 · ${state.today}", "当月")}
+    ${wxNav("出车收支日历")}
+    ${hero("流水", "支持多平台收入累加，分类可自定义", ["今日流水", "目标进度"], 0)}
     ${metrics()}
-    ${targetCard("本周流水目标", state.targets.week)}
-    <section class="card">
-      <div class="section-title">
-        <span>今日流水</span>
-        <button class="section-action" type="button">+ 记一笔</button>
-      </div>
-      <div class="flow-list">
-        ${todayItems.map(item => `
-          <div class="flow-item">
-            <div class="icon-box">
-              ${item.iconUrl ? `<img src="${item.iconUrl}" alt="">` : `<span class="emoji-icon">${item.icon}</span>`}
+    <div class="content">
+      ${targetCard("本周流水目标", state.targets.week)}
+      <section class="card">
+        ${title("🧾", "今日流水", "+ 添加")}
+        <div class="flow-list">
+          ${todayItems.map(item => `
+            <div class="flow-item">
+              <div class="icon-box">
+                ${item.iconUrl ? `<img src="${item.iconUrl}" alt="">` : `<span class="emoji-icon">${item.icon}</span>`}
+              </div>
+              <div>
+                <div class="item-title">${item.label}</div>
+                <div class="item-sub">${item.kind === "income" ? "收入平台" : "支出分类"}</div>
+              </div>
+              <div class="amount ${item.kind === "income" ? "green" : "red"}">${item.kind === "income" ? "+" : "-"}¥${money(item.amount)}</div>
             </div>
-            <div>
-              <div class="item-title">${item.label}</div>
-              <div class="item-sub">${item.kind === "income" ? "收入" : "支出"}</div>
-            </div>
-            <div class="amount ${item.kind === "income" ? "text-green" : "text-red"}">
-              ${item.kind === "income" ? "+" : "-"}¥${money(item.amount)}
-            </div>
-          </div>
-        `).join("")}
-      </div>
-    </section>
-    <section class="card">
-      <div class="section-title"><span>快速记录</span></div>
-      <div class="quick-grid">
-        <button class="quick-btn income" type="button">+ 收入</button>
-        <button class="quick-btn expense" type="button">- 支出</button>
-      </div>
-    </section>
+          `).join("")}
+        </div>
+        <div class="flow-add">添加流水</div>
+      </section>
+      <section class="card">
+        ${title("⚡", "快速记账")}
+        <div class="quick-grid">
+          <button class="quick-btn income" type="button">收入</button>
+          <button class="quick-btn expense" type="button">支出</button>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -186,7 +217,7 @@ function calendarDays() {
     const row = state.daily.find(item => item.day === day);
     days.push({
       day,
-      today: day === 9,
+      today: day === 10,
       income: row ? row.income : 0,
       expense: row ? row.expense : 0
     });
@@ -196,140 +227,156 @@ function calendarDays() {
 
 function calendarView() {
   return `
-    ${header("日历", "按日期查看每天的收入、支出和结余", "2026年9月")}
-    <section class="card calendar-card">
-      <div class="calendar-head">
-        <button class="nav-btn" type="button">‹</button>
-        <div class="month-name">2026年9月</div>
-        <button class="nav-btn" type="button">›</button>
-      </div>
-      <div class="week-grid">
-        ${["日", "一", "二", "三", "四", "五", "六"].map(day => `<div>${day}</div>`).join("")}
-      </div>
-      <div class="day-grid">
-        ${calendarDays().map(item => `
-          <div class="day-cell ${item.off ? "off" : ""} ${item.today ? "today" : ""}">
-            <div class="day-number">${item.day}</div>
-            ${item.income ? `<span class="day-money text-green">+${money(item.income)}</span>` : ""}
-            ${item.expense ? `<span class="day-money text-red">-${money(item.expense)}</span>` : ""}
-          </div>
-        `).join("")}
-      </div>
-    </section>
-    ${targetCard("本月流水目标", state.targets.month)}
+    ${wxNav("出车收支日历")}
+    ${hero("日历", "每天收入支出，一格看清", ["日历视图", "月度统计"], 0)}
+    <div class="content">
+      <section class="month-nav">
+        <button class="nav-circle" type="button">‹</button>
+        <div class="month-title">2026年9月</div>
+        <button class="nav-circle" type="button">›</button>
+      </section>
+      ${dayStrip()}
+      <section class="card">
+        <div class="week-grid">
+          ${["日", "一", "二", "三", "四", "五", "六"].map(day => `<div>${day}</div>`).join("")}
+        </div>
+        <div class="day-grid">
+          ${calendarDays().map(item => `
+            <div class="day-cell ${item.off ? "off" : ""} ${item.today ? "today" : ""}">
+              <div class="day-number">${item.day}</div>
+              ${item.income ? `<span class="day-money green">+${money(item.income)}</span>` : ""}
+              ${item.expense ? `<span class="day-money red">-${money(item.expense)}</span>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </section>
+      ${targetCard("本月流水目标", state.targets.month, true)}
+    </div>
   `;
 }
 
 function statsView() {
   const maxIncome = Math.max(...state.daily.map(item => item.income));
   return `
-    ${header("统计", "平台收入、支出分类、每日明细", "月报")}
-    <div class="period-tabs">
-      ${["周报", "月报", "年报"].map(label => `
-        <button class="period-tab ${label === "月报" ? "active" : ""}" type="button">${label}</button>
-      `).join("")}
-    </div>
+    ${wxNav("出车收支日历")}
+    ${hero("统计", "支持周报、月报、年报", ["周报", "月报", "年报"], 1)}
     ${metrics()}
-    <section class="card">
-      <div class="section-title">
-        <span>收支统计</span>
-        <button class="section-action" type="button">收入</button>
-      </div>
-      <div class="mini-chart">
-        ${state.daily.map(item => `<div class="bar" style="height:${Math.max((item.income / maxIncome) * 140, 4)}px"></div>`).join("")}
-      </div>
-    </section>
-    <section class="card">
-      <div class="section-title"><span>平台收入分布</span></div>
-      <div class="platform-list">
-        ${state.income.map(item => `
-          <div class="platform-item">
-            <div class="icon-box"><img src="${iconPath(item.icon)}" alt=""></div>
-            <div>
-              <div class="item-title">${item.name}</div>
-              <div class="item-sub">${item.days}天 ¥${money(item.amount)}</div>
-              <div class="platform-progress"><div style="width:${(item.amount / state.income[0].amount) * 100}%"></div></div>
-            </div>
-            <div class="amount text-green">¥${money(item.amount)}</div>
+    <div class="content">
+      ${dayStrip()}
+      <section class="card chart-card">
+        <div class="section-title">
+          <div class="section-title-main"><span class="title-icon">📊</span><span>收支统计</span></div>
+          <div class="chart-tabs">
+            <button class="chart-tab" type="button">支出</button>
+            <button class="chart-tab active" type="button">收入</button>
           </div>
-        `).join("")}
-      </div>
-    </section>
-    <section class="card">
-      <div class="section-title"><span>支出分类统计</span></div>
-      <div class="expense-list">
-        ${state.expense.map(item => `
-          <div class="expense-item">
-            <div class="icon-box"><span class="emoji-icon">${item.icon}</span></div>
-            <div>
-              <div class="item-title">${item.name}</div>
-              <div class="item-sub">占比 ${item.percent}%</div>
-              <div class="expense-progress"><div style="width:${item.percent}%"></div></div>
-            </div>
-            <div class="amount text-red">¥${money(item.amount)}</div>
+        </div>
+        <div class="bar-chart">
+          <div class="y-axis"><span>1000</span><span>800</span><span>600</span><span>400</span><span>200</span><span>0</span></div>
+          <div class="chart-area">
+            <div class="grid-line one"></div>
+            <div class="grid-line two"></div>
+            ${state.daily.map(item => `
+              <div class="bar-wrap">
+                <div class="bar" style="height:${Math.max((item.income / maxIncome) * 180, 4)}px"></div>
+                <span class="bar-day">${item.day}</span>
+              </div>
+            `).join("")}
           </div>
-        `).join("")}
-      </div>
-    </section>
-    <section class="card">
-      <div class="section-title"><span>每日收支明细</span></div>
-      <div class="daily-header">
-        <div>日期</div><div>收入</div><div>支出</div><div>结余</div>
-      </div>
-      <div class="daily-list">
-        ${state.daily.map(item => {
-          const net = item.income - item.expense;
-          return `
-            <div class="daily-item">
-              <div>9月${item.day}日</div>
-              <div class="text-green">+${money(item.income)}</div>
-              <div class="text-red">-${money(item.expense)}</div>
-              <div class="${net >= 0 ? "text-blue" : "text-red"}">${net >= 0 ? "+" : ""}${money(net)}</div>
+        </div>
+      </section>
+      <section class="card">
+        ${title("📱", "平台收入分布")}
+        <div class="platform-list">
+          ${state.income.map(item => `
+            <div class="platform-item">
+              <div class="icon-box"><img src="${iconPath(item.icon)}" alt=""></div>
+              <div>
+                <div class="item-title">${item.name}</div>
+                <div class="item-sub">${item.days}天 ¥${money(item.amount)}</div>
+                <div class="progress-bg"><div class="platform-fill" style="width:${(item.amount / state.income[0].amount) * 100}%"></div></div>
+              </div>
+              <div class="amount green">¥${money(item.amount)}</div>
             </div>
-          `;
-        }).join("")}
-      </div>
-    </section>
+          `).join("")}
+        </div>
+      </section>
+      <section class="card">
+        ${title("📊", "支出分类统计")}
+        <div class="expense-list">
+          ${state.expense.map(item => `
+            <div class="expense-item">
+              <div class="icon-box"><span class="emoji-icon">${item.icon}</span></div>
+              <div>
+                <div class="item-title">${item.name}</div>
+                <div class="progress-bg"><div class="expense-fill" style="width:${item.percent}%"></div></div>
+              </div>
+              <div>
+                <div class="amount red">¥${money(item.amount)}</div>
+                <div class="percent-pill">占比 ${item.percent}%</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+      <section class="card">
+        ${title("📋", "每日收支明细")}
+        <div class="daily-header"><div>日期</div><div>收入</div><div>支出</div><div>结余</div></div>
+        <div class="daily-list">
+          ${state.daily.map(item => {
+            const net = item.income - item.expense;
+            return `
+              <div class="daily-item">
+                <div>9月${item.day}日</div>
+                <div class="green">+${money(item.income)}</div>
+                <div class="red">-${money(item.expense)}</div>
+                <div class="${net >= 0 ? "blue" : "red"}">${net >= 0 ? "+" : ""}${money(net)}</div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    </div>
   `;
 }
 
 function mineView() {
   const settings = [
-    ["💧", "流水显示", "选择流水页五个核心指标的统计周期"],
-    ["🎯", "流水计划", "设置周目标、月目标和超出显示"],
-    ["💰", "收入平台", "管理滴滴、高德、美团等平台"],
-    ["💸", "支出分类", "管理充电、加油、停车、维修"],
-    ["📦", "数据备份", "导出 CSV，降低本地数据丢失风险"],
-    ["📖", "使用手册", "查看记账和统计说明"]
+    ["💧", "流水显示", "统计周期"],
+    ["🎯", "流水计划", "目标管理"],
+    ["💰", "收入平台", "平台排序"],
+    ["💸", "支出分类", "分类管理"],
+    ["📦", "数据备份", "CSV 导出"],
+    ["📖", "使用手册", "记账说明"]
   ];
 
   return `
-    ${header("我的", "设置分类、目标、备份和终身解锁", "设置")}
-    <section class="card pay-card">
-      <div class="section-title"><span>终身解锁</span></div>
-      <div class="price">¥9.9</div>
-      <div class="small-muted">一次买断，不订阅，不上传收入数据</div>
-      <div class="pay-points">
-        <div>✓ 解锁完整统计和平台收入分布</div>
-        <div>✓ 自定义收入平台与支出分类</div>
-        <div>✓ CSV 导出备份，长期留档</div>
-      </div>
-    </section>
-    <section class="card">
-      <div class="section-title"><span>功能设置</span></div>
-      <div class="settings-list">
-        ${settings.map(item => `
-          <div class="setting-row">
-            <div class="emoji-icon">${item[0]}</div>
-            <div>
+    ${wxNav("我的")}
+    ${hero("我的", "设置分类、目标、备份", ["功能设置", "终身解锁"], 0)}
+    <div class="content">
+      <section class="card pay-card">
+        <div class="section-title"><div class="section-title-main"><span>终身解锁</span></div></div>
+        <div class="price">¥9.9</div>
+        <div class="pay-sub">一次买断，不订阅，不上传收入数据</div>
+        <div class="pay-points">
+          <div>✓ 完整统计和平台收入分布</div>
+          <div>✓ 自定义收入平台与支出分类</div>
+          <div>✓ CSV 导出备份，长期留档</div>
+        </div>
+      </section>
+      <section class="card">
+        ${title("⚙️", "功能设置")}
+        <div class="setting-grid">
+          ${settings.map(item => `
+            <div class="setting-item">
+              <div class="setting-icon">${item[0]}</div>
               <div class="setting-title">${item[1]}</div>
               <div class="setting-desc">${item[2]}</div>
             </div>
-            <div class="switch"></div>
-          </div>
-        `).join("")}
-      </div>
-    </section>
+          `).join("")}
+        </div>
+      </section>
+    </div>
   `;
 }
 
